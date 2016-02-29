@@ -7,6 +7,8 @@ This example code is in the public domain.
 
 const uint8_t LEDPin = 13;
 
+const int LDR_Pin = A0; //analog pin 0
+
 // Define on which pin the first detector sits:
 const uint8_t bw1_trigger_pin = 3;
 // define parameters for bw1
@@ -27,7 +29,7 @@ unsigned long last_loop_millis = 0;
 unsigned long bw_interval = 25;                                     // interval in millis for Sensor check
 unsigned long last_bw_millis = 0;
 
-unsigned long serial_interval = 250;                                // interval in millis for Serial Output
+unsigned long serial_interval = 100;                                // interval in millis for Serial Output
 unsigned long last_serial_millis = 0;
 
 // Parameter nötig
@@ -80,7 +82,7 @@ void loop ( ) {
         else{
             if (bw1_count >> 0){
                 bw1_count--;
-                if (bw1_pin_State == bw1_pin_State_last && bw1_count >> 20)bw1_count = bw1_count - 2;
+                if (bw1_pin_State == bw1_pin_State_last && bw1_count >> 20)bw1_count = bw1_count - 3;
             }
         }
 
@@ -97,6 +99,11 @@ void loop ( ) {
 
     // print out the state of the detector:
     if (this_loop_millis - last_serial_millis >= serial_interval) {
+
+        //testing for ldr
+        int LDRReading = analogRead (LDR_Pin);
+
+
         Serial.println ();
         Serial.println (this_loop_millis);
         Serial.println ("------------------------------");
@@ -113,6 +120,9 @@ void loop ( ) {
         Serial.print ("bw1_pin_State_change_last millis  : ");
         Serial.println (bw1_pin_State_change_last_millis);
         
+        Serial.print ("LDR Value  : ");
+        Serial.println (LDRReading);
+
         //led einschalten wenn presence detected
         if (bw1_presence_detected) { digitalWrite (LEDPin, HIGH); }
         else { digitalWrite (LEDPin, LOW); }
