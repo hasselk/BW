@@ -7,10 +7,10 @@ by Hassel v0.1
 
 
 /*  Todo
- Parameter nötig
-      empfindlichkeit präsenz
+ Parameter nÃ¶tig
+      empfindlichkeit prÃ¤senz
         empfindlichkeit bewegung
-        zeit/timeout um päsenz zu detektieren
+        zeit/timeout um pÃ¤senz zu detektieren
 
         bw1 lastpinstate
       bw muss die ersten 30-60 sec in ruhe gelassen bzw ignoriert werden zum initialisieren
@@ -35,7 +35,7 @@ unsigned int bw1_count = 0;
 
 int LDRReading = -1;
 
-// variablen für "multitasking" bzw ablaufkontrolle
+// variablen fÃ¼r "multitasking" bzw ablaufkontrolle
 unsigned long this_loop_millis = 0;
 unsigned long last_loop_millis = 0;
 unsigned long bw_interval = 25;                                     // interval in millis for Sensor check
