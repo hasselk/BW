@@ -1,63 +1,65 @@
 /*
-DigitalReadSerial
-Reads a digital input on pin 2, prints the result to the serial monitor
+Movement/Presence Detector testcode
 
-This example code is in the public domain.
+by Hassel v0.1
 */
 
+
+
+/*  Todo
+ Parameter nötig
+      empfindlichkeit präsenz
+        empfindlichkeit bewegung
+        zeit/timeout um päsenz zu detektieren
+
+        bw1 lastpinstate
+      bw muss die ersten 30-60 sec in ruhe gelassen bzw ignoriert werden zum initialisieren
+*/
+
+
 const uint8_t LEDPin = 13;
+const int LDR_Pin = A0;                                             //Where is the LDR connected
 
-const int LDR_Pin = A0; //analog pin 0
-
-// Define on which pin the first detector sits:
-const uint8_t bw1_trigger_pin = 3;
 // define parameters for bw1
-bool bw1_movement_detected = false;
-bool bw1_presence_detected = false;
+const uint8_t bw1_trigger_pin = 4;                                  // Define on which pin the first detector sits:
 uint8_t bw1_pin_State = LOW;
 uint8_t bw1_pin_State_last = LOW;
+bool bw1_movement_detected = false;                                 // braucht n KO
+bool bw1_presence_detected = false;                                 // braucht n KO
 bool bw1_pin_State_change = false;
-int bw1_count = 0;
-int bw1_sensivity_presence = 10;
 unsigned long bw1_pin_State_change_last_millis = 0;
 unsigned long bw1_last_movement_millis = 0;
+byte bw1_sensivity_presence = 10;                                    // braucht als parameter in knx
+unsigned int bw1_count_max = 61000;                                          // braucht als parameter in knx
+unsigned int bw1_count = 0;
 
-// variablen für "multitasking"
+int LDRReading = -1;
+
+// variablen für "multitasking" bzw ablaufkontrolle
 unsigned long this_loop_millis = 0;
 unsigned long last_loop_millis = 0;
-
 unsigned long bw_interval = 25;                                     // interval in millis for Sensor check
 unsigned long last_bw_millis = 0;
-
 unsigned long serial_interval = 100;                                // interval in millis for Serial Output
 unsigned long last_serial_millis = 0;
 
-// Parameter nötig
-//      empfindlichkeit präsenz
-//		empfindlichkeit bewegung
-//		zeit/timeout um päsenz zu detektieren
-//
-//		bw1 lastpinstate
-// bw muss die ersten 30-60 sec in ruhe gelassen bzw ignoriert werden zum initialisieren
 
 
-// the setup routine runs once when you press reset:
 void setup ( ) {
-    // initialize serial communication at 115200 bits per second:
-    Serial.begin(115200);
+    
+    Serial.begin(115200);                                           // initialize serial comm at 115200 bits per second:
 
-    pinMode (13, OUTPUT);
+    pinMode (LEDPin, OUTPUT);
+    pinMode (bw1_trigger_pin, INPUT);                               // set the BW trigger pin as input:
 
-    // set the trigger pin as input:
-    pinMode (bw1_trigger_pin, INPUT);
+    bw1_count_max = 61000; 
 }
 
-// the loop routine runs over and over again forever:
 void loop ( ) {
     this_loop_millis = millis ( );
     
 
-    // read the input pin depending on the interval:
+    // read the detector depending on the interval:
     if (this_loop_millis - last_bw_millis >= bw_interval) {
 
         bw1_pin_State = digitalRead (bw1_trigger_pin);
@@ -69,20 +71,26 @@ void loop ( ) {
             bw1_pin_State_change_last_millis = this_loop_millis;
         }
         else {
-            bw1_pin_State_change = false; }
+            bw1_pin_State_change = false;
+        }
 
         // increment or decrement counter for better accuracy presence detection
         if (bw1_pin_State == HIGH){
-            if (bw1_count <= 20000) {
+
+
+            if (bw1_count <= bw1_count_max) {
                 bw1_count++;
-                if (bw1_pin_State == bw1_pin_State_last)bw1_count = bw1_count + 5;
+                if (!bw1_pin_State_change){ bw1_count = bw1_count + 12; }
             }
+
+            if (!bw1_pin_State_change){ bw1_movement_detected; }
             bw1_last_movement_millis = this_loop_millis;
         }
         else{
             if (bw1_count >> 0){
-                bw1_count--;
-                if (bw1_pin_State == bw1_pin_State_last && bw1_count >> 20)bw1_count = bw1_count - 3;
+                bw1_count--;    
+                if ((!bw1_pin_State_change) && (bw1_count >> 100)){
+                    bw1_count = bw1_count - 3; }
             }
         }
 
@@ -97,33 +105,15 @@ void loop ( ) {
     }
 
 
-    // print out the state of the detector:
+    // serial output state of the detector:
     if (this_loop_millis - last_serial_millis >= serial_interval) {
 
-        //testing for ldr
-        int LDRReading = analogRead (LDR_Pin);
-
-
-        Serial.println ();
-        Serial.println (this_loop_millis);
-        Serial.println ("------------------------------");
         
-        Serial.print ("BW1 pin state            : ");
-        Serial.println (bw1_pin_State);
-        Serial.print ("BW1 counter              : ");
-        Serial.println (bw1_count);
-        Serial.print ("BW1 Presence              : ");
-        Serial.println (bw1_presence_detected);
-        Serial.print ("bw1 last movement millis  : ");
-        Serial.println (bw1_last_movement_millis);
+        LDRReading = analogRead (LDR_Pin);                          //read ldr value
         
-        Serial.print ("bw1_pin_State_change_last millis  : ");
-        Serial.println (bw1_pin_State_change_last_millis);
-        
-        Serial.print ("LDR Value  : ");
-        Serial.println (LDRReading);
+        write_Serial_Debug ( );
 
-        //led einschalten wenn presence detected
+        //enable led if presence detected
         if (bw1_presence_detected) { digitalWrite (LEDPin, HIGH); }
         else { digitalWrite (LEDPin, LOW); }
 
@@ -131,9 +121,31 @@ void loop ( ) {
         last_serial_millis = this_loop_millis;   // sercomm aktuelle Zeit abspeichern
     }
 
+
     last_loop_millis = this_loop_millis;
-    
 }
 
 
 
+void write_Serial_Debug ( )
+{
+    Serial.println ("--------------------------------------------------------");
+    Serial.println (this_loop_millis);
+    Serial.println ("------------------------------");
+    Serial.print ("BW1 pin state             : ");
+    Serial.println (bw1_pin_State);
+    Serial.print ("BW1 counter               : ");
+    Serial.println (bw1_count);
+    Serial.print ("BW1 counter max           : ");
+    Serial.println (bw1_count_max);
+    Serial.print ("BW1 Movement              : ");
+    Serial.println (bw1_movement_detected);
+    Serial.print ("BW1 Presence              : ");
+    Serial.println (bw1_presence_detected);
+    Serial.print ("bw1 last movement millis  : ");
+    Serial.println (bw1_last_movement_millis);
+    Serial.print ("bw1_pin_State_change_last millis  : ");
+    Serial.println (bw1_pin_State_change_last_millis);
+    Serial.print ("LDR Value  : ");
+    Serial.println (LDRReading);
+}
