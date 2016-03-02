@@ -20,21 +20,22 @@
 
 */
 
+
 //#include "HK_PIR_Sensor.h"
 
     const uint8_t LEDPin = LED_BUILTIN;
-    const int LDR1_Pin = A0;                                             //Where is the LDR connected
+    
 
 // Pir1 vars
     const uint8_t pir1_trigger_pin = 4;                                  // pin connected to the first pir detector
-    bool pir1_pin_State = LOW;
-    bool pir1_pin_State_last = LOW;
+    uint8_t pir1_pin_State = LOW;
+    uint8_t pir1_pin_State_last = LOW;
     bool pir1_pin_State_change = false;
-    bool pir1_detected_movement = false;                                 // braucht n KO
-    bool pir1_detected_presence = false;                                 // braucht n KO
+    bool pir1_detected_movement = false;                                 // braucht n KO in knx
+    bool pir1_detected_presence = false;                                 // braucht n KO in knx
 
 
-    byte pir1_sensivity_presence = 10;                                   // braucht als parameter in knx
+    byte pir1_sensivity_presence = 20;                                   // braucht als parameter in knx
     unsigned int pir1_count_max = 22000;                                 // braucht als parameter in knx
     unsigned int pir1_count;
     const unsigned int pir1_count_slowdown = 1000;
@@ -43,9 +44,10 @@
     unsigned long pir1_last_movement_millis;
 
 // LDR1 vars
+    const int LDR1_Pin = A0;                                             //Where is the LDR connected
     int LDR1_Reading = -1;
     int LDR1_Reading_last = -1;
-    int LDR1_Reading_avg = -1;
+    int LDR1_Reading_avg = -1;                                           // braucht n KO in knx
 
 // variablen für "multitasking" bzw ablaufkontrolle x*4byte
     unsigned long this_loop_millis = 0;
@@ -61,7 +63,7 @@
 
 void setup ( ) {
 
-  Serial.begin (115200);                                                  // initialize serial comm at 115200 bits per second:
+  Serial.begin (115200);                                                  // initialize serial comm
 
   pinMode (LEDPin, OUTPUT);
   pinMode (pir1_trigger_pin, INPUT);                                      // set the BW trigger pin as input:
